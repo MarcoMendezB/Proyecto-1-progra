@@ -147,3 +147,4 @@ public class PanelVentas extends JPanel {
         add(btnFacturar, BorderLayout.SOUTH);
     }
 }
+//adios
