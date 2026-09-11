@@ -1,7 +1,10 @@
 package modelo;
-
 public class PedidoLocal extends Pedido {
-    public PedidoLocal(String cliente ) { super(cliente); }
+    private int numeroMesa;
+    public PedidoLocal(String cliente, int numeroMesa) {
+        super(cliente);
+        this.numeroMesa = numeroMesa;
+    }
     @Override
-    public double calcularTotal(){ return calcularSubtotal() + calcularImpuesto();}
+    public double calcularTotal() { return calcularSubtotal() + calcularImpuesto(); }
 }
