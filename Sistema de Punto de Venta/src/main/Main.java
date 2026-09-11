@@ -1,7 +1,6 @@
 package main;
 import datos.Inventario;
 import gui.PanelCatalogo;
-import gui.PanelVentas;
 
 import javax.swing.*;
 
