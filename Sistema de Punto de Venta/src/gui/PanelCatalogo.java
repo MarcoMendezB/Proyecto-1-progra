@@ -1,4 +1,6 @@
 package gui;
+import datos.Inventario;
+import modelo.*;
 
 import datos.Inventario;
 import modelo.Producto;
