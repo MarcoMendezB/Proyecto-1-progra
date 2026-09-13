@@ -123,6 +123,7 @@ public class PanelVentas extends JPanel {
             for (Producto p : pedidoActual.getCarrito()) {
                 p.setCantidadInventario(p.getCantidadInventario() - 1);
             }
+            inventario.guardarDatos();
 
             // Imprimir Factura Final
             String facturaFinal = "--- FACTURA (" + metodo + ") ---\n" +
@@ -143,6 +144,7 @@ public class PanelVentas extends JPanel {
         add(panelTop, BorderLayout.NORTH);
         add(panelCentro, BorderLayout.CENTER);
         add(panelSur, BorderLayout.SOUTH);
+        actualizarComboProductos();
     }
 
     public void actualizarComboProductos() {

@@ -93,6 +93,7 @@ public class PanelCatalogo extends JPanel {
                 JOptionPane.showMessageDialog(this, "Producto eliminado.");
             }
         });
+        actualizarTabla();
     }
 
     // --- MÉTODOS DE APOYO ---
