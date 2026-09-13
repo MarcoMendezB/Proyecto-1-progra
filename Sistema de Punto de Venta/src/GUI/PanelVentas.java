@@ -145,7 +145,6 @@ public class PanelVentas extends JPanel {
         add(panelSur, BorderLayout.SOUTH);
     }
 
-    // Nuevo método público para recargar el ComboBox automáticamente
     public void actualizarComboProductos() {
         comboProductos.removeAllItems();
         for (Producto p : inventario.obtenerTodos()) {
