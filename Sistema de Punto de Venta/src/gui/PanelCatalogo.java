@@ -1,8 +1,5 @@
 package gui;
 import datos.Inventario;
-import modelo.*;
-
-import datos.Inventario;
 import modelo.Producto;
 import util.Validador;
 import javax.swing.*;
@@ -72,7 +69,7 @@ public class PanelCatalogo extends JPanel {
         // --- ACCIONES DE LOS BOTONES ---
         btnAgregar.addActionListener(e -> {
             if (validarCampos()) {
-                inventario.agregar(crearProducto());
+                inventario.insertar(crearProducto());
                 limpiarYActualizar();
                 JOptionPane.showMessageDialog(this, "Producto agregado exitosamente.");
             }
@@ -93,6 +90,7 @@ public class PanelCatalogo extends JPanel {
                 JOptionPane.showMessageDialog(this, "Producto eliminado.");
             }
         });
+        actualizarTabla();
     }
 
     // --- MÉTODOS DE APOYO ---
@@ -117,6 +115,14 @@ public class PanelCatalogo extends JPanel {
     private boolean validarCampos() {
         if (txtCodigo.getText().isEmpty() || txtNombre.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Código y Nombre son obligatorios.", "Atención", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!Validador.esTextoSeguro(txtCodigo.getText())
+                || !Validador.esTextoSeguro(txtNombre.getText())
+                || !Validador.esTextoSeguro(txtCategoria.getText())) {
+            JOptionPane.showMessageDialog(this,
+                    "Código, nombre y categoría solo admiten letras, números, espacios, puntos y guiones.",
+                    "Texto no permitido", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         if (!Validador.esNumeroDouble(txtPrecio.getText())) {
