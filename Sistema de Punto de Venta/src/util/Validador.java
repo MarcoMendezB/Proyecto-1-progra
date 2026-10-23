@@ -38,4 +38,23 @@ public class Validador {
             return false;
         }
     }
+
+    /**
+     * Valida que el texto no contenga caracteres especiales de SQL como comillas simples,
+     * punto y coma o guiones dobles que puedan ser usados en un ataque (aunque MySQL
+     * ya esté protegido por CallableStatement).
+     * Permite letras (con tildes y ñ/ü), números, espacios, puntos y guiones simples.
+     */
+    public static boolean esTextoSeguro(String str) {
+        if (str == null || str.trim().isEmpty()) {
+            System.out.println("Error: el campo de texto está vacío.");
+            return false;
+        }
+        // Bloquea ', ", ;, /*, etc. Se bloquea también "--" (comentario SQL)
+        if (!str.matches("^[a-zA-Z0-9 áéíóúüÁÉÍÓÚÜñÑ.-]+$") || str.contains("--")) {
+            System.out.println("Error: '" + str + "' contiene caracteres no permitidos.");
+            return false;
+        }
+        return true;
+    }
 }
