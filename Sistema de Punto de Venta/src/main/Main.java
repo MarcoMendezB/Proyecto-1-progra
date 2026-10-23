@@ -2,11 +2,13 @@ package main;
 import datos.Inventario;
 import gui.PanelCatalogo;
 import gui.PanelVentas;
-
 import javax.swing.*;
+import util.ConfiguracionBD;
 
 public class Main {
     public static void main(String[] args) {
+        ConfiguracionBD.validarCredenciales();
+
         SwingUtilities.invokeLater(() -> {
             // Instancia central de base de datos en memoria
             Inventario inventarioCompartido = new Inventario();
