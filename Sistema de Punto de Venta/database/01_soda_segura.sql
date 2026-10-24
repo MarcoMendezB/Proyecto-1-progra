@@ -77,3 +77,27 @@ GRANT EXECUTE ON PROCEDURE soda_pos.sp_insertar_producto TO 'soda_app'@'localhos
 GRANT EXECUTE ON PROCEDURE soda_pos.sp_actualizar_producto TO 'soda_app'@'localhost';
 GRANT EXECUTE ON PROCEDURE soda_pos.sp_eliminar_producto TO 'soda_app'@'localhost';
 FLUSH PRIVILEGES;
+
+
+-- TABLAS PARA LA RELACIÓN N:M (Pedidos y Detalles)
+CREATE TABLE IF NOT EXISTS pedido (
+                                      id INT AUTO_INCREMENT PRIMARY KEY,
+                                      cliente VARCHAR(100) NOT NULL,
+    tipo_pedido VARCHAR(20) NOT NULL, -- 'LOCAL' o 'EXPRESS'
+    total DECIMAL(10,2) NOT NULL,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+CREATE TABLE IF NOT EXISTS detalle_pedido (
+    pedido_id INT,
+    producto_codigo VARCHAR(20),
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (pedido_id, producto_codigo),
+    FOREIGN KEY (pedido_id) REFERENCES pedido(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_codigo) REFERENCES producto(codigo)
+    );
+
+-- Permisos extra para el definidor
+GRANT SELECT, INSERT, UPDATE, DELETE ON soda_pos.pedido TO 'soda_definer'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON soda_pos.detalle_pedido TO 'soda_definer'@'localhost';
