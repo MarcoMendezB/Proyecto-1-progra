@@ -5,12 +5,15 @@ import util.Validador;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class PanelCatalogo extends JPanel {
     private Inventario inventario;
     private JTextField txtCodigo, txtNombre, txtCategoria, txtPrecio, txtCantidad;
     private JTable tablaProductos;
     private DefaultTableModel modeloTabla;
+    private JTextField txtBuscar;
+    private JButton btnBuscar;
 
     public PanelCatalogo(Inventario inventario) {
         this.inventario = inventario;
@@ -63,8 +66,20 @@ public class PanelCatalogo extends JPanel {
             }
         });
 
+        // --- BARRA DE BUSQUEDA (arriba de la tabla) ---
+        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        txtBuscar = new JTextField(15);
+        btnBuscar = new JButton("🔍 Buscar");
+        panelBusqueda.add(new JLabel("Filtrar por Nombre/Categoría: "));
+        panelBusqueda.add(txtBuscar);
+        panelBusqueda.add(btnBuscar);
+
+        JPanel panelDerecho = new JPanel(new BorderLayout());
+        panelDerecho.add(panelBusqueda, BorderLayout.NORTH);
+        panelDerecho.add(new JScrollPane(tablaProductos), BorderLayout.CENTER);
+
         add(panelIzquierdo, BorderLayout.WEST);
-        add(new JScrollPane(tablaProductos), BorderLayout.CENTER);
+        add(panelDerecho, BorderLayout.CENTER);
 
         // --- ACCIONES DE LOS BOTONES ---
         btnAgregar.addActionListener(e -> {
@@ -90,26 +105,61 @@ public class PanelCatalogo extends JPanel {
                 JOptionPane.showMessageDialog(this, "Producto eliminado.");
             }
         });
-        actualizarTabla();
+
+        // Buscar con el boton o presionando Enter
+        btnBuscar.addActionListener(e -> cargarTablaEnHilo(txtBuscar.getText().trim()));
+        txtBuscar.addActionListener(e -> cargarTablaEnHilo(txtBuscar.getText().trim()));
+
+        cargarTablaEnHilo(""); // Carga inicial sin filtro
     }
 
     // --- MÉTODOS DE APOYO ---
 
-    // Este es el método que el Main está buscando y causaba los errores
-    public void actualizarTabla() {
-        modeloTabla.setRowCount(0); // Limpia las filas actuales
-        for (Producto p : inventario.obtenerTodos()) {
-            modeloTabla.addRow(new Object[]{
-                    p.getCodigo(), p.getNombre(), p.getCategoria(), p.getPrecio(), p.getCantidadInventario()
-            });
-        }
+    // Carga la tabla en un hilo aparte para no congelar la pantalla.
+    // Si "filtro" trae texto, solo se muestran los productos cuyo nombre o categoria lo contienen.
+    public void cargarTablaEnHilo(String filtro) {
+        SwingWorker<List<Producto>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<Producto> doInBackground() throws Exception {
+                // Se llama al repositorio (puede ser lento) fuera del hilo de la pantalla
+                List<Producto> todos = inventario.obtenerTodos();
+
+                if (filtro == null || filtro.isEmpty()) {
+                    return todos;
+                }
+                String f = filtro.toLowerCase();
+                return todos.stream()
+                        .filter(p -> p.getNombre().toLowerCase().contains(f) ||
+                                p.getCategoria().toLowerCase().contains(f))
+                        .toList();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Producto> datos = get();
+                    modeloTabla.setRowCount(0); // Limpia las filas actuales
+                    for (Producto p : datos) {
+                        modeloTabla.addRow(new Object[]{
+                                p.getCodigo(), p.getNombre(), p.getCategoria(),
+                                p.getPrecio(), p.getCantidadInventario()
+                        });
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(PanelCatalogo.this,
+                            "Error al cargar el catálogo.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void limpiarYActualizar() {
         txtCodigo.setText(""); txtNombre.setText(""); txtCategoria.setText("");
         txtPrecio.setText(""); txtCantidad.setText("");
         txtCodigo.setEditable(true);
-        actualizarTabla();
+        txtBuscar.setText("");
+        cargarTablaEnHilo("");
     }
 
     private boolean validarCampos() {
