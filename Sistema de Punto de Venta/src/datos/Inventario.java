@@ -50,11 +50,12 @@ public class Inventario implements Repositorio<Producto> {
     // ------------------------------
 
     @Override
-    public void agregar(Producto p) {
+    public void insertar(Producto p) {
         productos.add(p);
         guardarDatos(); // Guardar al añadir
     }
 
+    @Override
     public void actualizar(Producto p) {
         for (int i = 0; i < productos.size(); i++) {
             if (productos.get(i).getCodigo().equals(p.getCodigo())) {
@@ -65,6 +66,7 @@ public class Inventario implements Repositorio<Producto> {
         }
     }
 
+    @Override
     public void eliminar(String codigo) {
         productos.removeIf(p -> p.getCodigo().equals(codigo));
         guardarDatos(); // Guardar al borrar
