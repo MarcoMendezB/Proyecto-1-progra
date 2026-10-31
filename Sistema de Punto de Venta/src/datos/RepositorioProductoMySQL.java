@@ -1,6 +1,6 @@
 package datos;
 import modelo.Producto;
-import util.ConfiguracionBD;
+import util.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

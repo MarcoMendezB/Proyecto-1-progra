@@ -1,6 +1,6 @@
 package datos;
 import modelo.*;
-import util.ConfiguracionBD;
+import util.*;
 import java.sql.*;
 
 public class RepositorioPedidoMySQL {

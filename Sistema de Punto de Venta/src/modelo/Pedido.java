@@ -11,6 +11,11 @@ public abstract class Pedido implements Facturable{
         this.cliente = cliente;
         this.carrito = new ArrayList<>();
     }
+
+    public String getCliente() {
+        return cliente;
+    }
+
     public void agregarProducto(Producto p){ carrito.add(p);}
     public List<Producto> getCarrito() {return carrito;}
 
