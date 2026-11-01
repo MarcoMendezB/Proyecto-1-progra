@@ -6,4 +6,5 @@ public interface Repositorio<T> {
     void insertar(T entidad);   // Antes se llamaba agregar
     void actualizar(T entidad); // Nuevo método explícito
     void eliminar(String id);   // Nuevo método explícito
+    void decrementarStock(String id); // Decrementa stock de un producto por su código
 }

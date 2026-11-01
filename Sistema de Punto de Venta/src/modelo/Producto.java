@@ -8,18 +8,25 @@ public class Producto {
     private int cantidadInventario;
 
     public Producto(String codigo, String nombre, String categoria, double precio, int cantidadInventario) {
-        this.codigo = codigo; this.nombre = nombre; this.categoria = categoria;
-        this.precio = precio; this.cantidadInventario = cantidadInventario;
+        // Evitar NPE por campos null (por ejemplo, columnas NULL en MySQL)
+        this.codigo = codigo == null ? "" : codigo;
+        this.nombre = nombre == null ? "" : nombre;
+        this.categoria = categoria == null ? "" : categoria;
+        this.precio = precio;
+        this.cantidadInventario = cantidadInventario;
     }
 
     // Getters y Setters necesarios
-    public String getCodigo() { return codigo; }
-    public String getNombre() { return nombre; }
-    public String getCategoria() { return categoria; }
+    public String getCodigo() { return codigo == null ? "" : codigo; }
+    public String getNombre() { return nombre == null ? "" : nombre; }
+    public String getCategoria() { return categoria == null ? "" : categoria; }
     public double getPrecio() { return precio; }
     public int getCantidadInventario() { return cantidadInventario; }
     public void setCantidadInventario(int cantidadInventario) { this.cantidadInventario = cantidadInventario; }
 
     @Override
-    public String toString() { return nombre + " - ₡" + precio + " (Stock: " + cantidadInventario + ")"; }
+    public String toString() {
+        String n = getNombre();
+        return (n.isEmpty() ? "(sin nombre)" : n) + " - ₡" + precio + " (Stock: " + cantidadInventario + ")";
+    }
 }
