@@ -1,6 +1,5 @@
 package modelo;
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Pedido implements Facturable{
@@ -11,12 +10,16 @@ public abstract class Pedido implements Facturable{
         this.cliente = cliente;
         this.carrito = new ArrayList<>();
     }
-    public void agregarProducto(Producto p){ carrito.add(p);}
-    public List<Producto> getCarrito() {return carrito;}
+    public void agregarProducto(Producto p){ if (p != null) carrito.add(p); }
+    public List<Producto> getCarrito() { return carrito == null ? new ArrayList<>() : carrito; }
+    public String getCliente() { return cliente == null ? "" : cliente; }
 
     @Override
     public double calcularSubtotal() {
-        return carrito.stream().mapToDouble(Producto::getPrecio).sum();
+        return getCarrito().stream()
+            .filter(p -> p != null)
+            .mapToDouble(Producto::getPrecio)
+            .sum();
     }
     @Override
     public double calcularImpuesto(){return calcularSubtotal() * 0.13;}

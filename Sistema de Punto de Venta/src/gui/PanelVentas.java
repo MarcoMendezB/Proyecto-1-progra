@@ -1,18 +1,22 @@
 package gui;
-import datos.Inventario;
+import datos.Repositorio;
+import servicio.VentaService;
 import modelo.*;
 import javax.swing.*;
+import javax.swing.SwingWorker;
 import java.awt.*;
+import java.util.List;
 
 public class PanelVentas extends JPanel {
-    private Inventario inventario;
+    private VentaService ventaService;
     private Pedido pedidoActual;
+    private String nombreClienteActual;
     private JComboBox<Producto> comboProductos;
     private JTextArea areaFactura;
     private JComboBox<String> comboPago;
 
-    public PanelVentas(Inventario inventario) {
-        this.inventario = inventario;
+    public PanelVentas(VentaService ventaService) {
+        this.ventaService = ventaService;
         setLayout(new BorderLayout());
 
         // --- TOP: Configuración del Pedido ---
@@ -41,14 +45,31 @@ public class PanelVentas extends JPanel {
 
         JButton btnIniciar = new JButton("Iniciar Orden");
         btnIniciar.addActionListener(e -> {
-            String cli = txtCliente.getText().isEmpty() ? "Genérico" : txtCliente.getText();
+            String cli = txtCliente.getText().isEmpty() ? "Genérico" : txtCliente.getText().trim();
             if (rbLocal.isSelected()) {
-                int mesa = txtMesa.getText().isEmpty() ? 0 : Integer.parseInt(txtMesa.getText());
+                int mesa;
+                try {
+                    mesa = txtMesa.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtMesa.getText().trim());
+                    if (mesa < 0) {
+                        JOptionPane.showMessageDialog(this, "El número de mesa no puede ser negativo.");
+                        return;
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Ingrese un número de mesa válido.");
+                    return;
+                }
+                nombreClienteActual = cli;
                 pedidoActual = new PedidoLocal(cli, mesa);
                 areaFactura.setText("Orden Local iniciada - Cliente: " + cli + " - Mesa: " + mesa + "\n");
             } else {
-                pedidoActual = new PedidoExpress(cli, txtDireccion.getText());
-                areaFactura.setText("Orden Express iniciada - Cliente: " + cli + "\nDir: " + txtDireccion.getText() + "\n");
+                String direccion = txtDireccion.getText().trim();
+                if (direccion.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "La dirección es obligatoria para pedidos Express.");
+                    return;
+                }
+                nombreClienteActual = cli;
+                pedidoActual = new PedidoExpress(cli, direccion);
+                areaFactura.setText("Orden Express iniciada - Cliente: " + cli + "\nDir: " + direccion + "\n");
             }
         });
         panelDetallePedido.add(btnIniciar);
@@ -61,10 +82,7 @@ public class PanelVentas extends JPanel {
         comboProductos = new JComboBox<>();
 
         JButton btnActualizar = new JButton("Cargar Catálogo");
-        btnActualizar.addActionListener(e -> {
-            comboProductos.removeAllItems();
-            for (Producto p : inventario.obtenerTodos()) comboProductos.addItem(p);
-        });
+        btnActualizar.addActionListener(e -> actualizarComboProductosEnHilo());
 
         JButton btnAdd = new JButton("Añadir a Orden");
         btnAdd.addActionListener(e -> {
@@ -72,7 +90,7 @@ public class PanelVentas extends JPanel {
             Producto p = (Producto) comboProductos.getSelectedItem();
             if (p != null) {
                 // VALIDACIÓN DE INVENTARIO
-                long cantidadEnCarrito = pedidoActual.getCarrito().stream().filter(prod -> prod.getCodigo().equals(p.getCodigo())).count();
+                long cantidadEnCarrito = pedidoActual.getCarrito().stream().filter(prod -> prod != null && prod.getCodigo().equals(p.getCodigo())).count();
                 if (cantidadEnCarrito >= p.getCantidadInventario()) {
                     JOptionPane.showMessageDialog(this, "No hay suficiente inventario de " + p.getNombre());
                     return;
@@ -119,17 +137,13 @@ public class PanelVentas extends JPanel {
                 }
             }
 
-            // REDUCIR INVENTARIO POR CADA VENTA
-            for (Producto p : pedidoActual.getCarrito()) {
-                p.setCantidadInventario(p.getCantidadInventario() - 1);
-            }
-            inventario.guardarDatos();
+            ventaService.registrarVenta(pedidoActual, nombreClienteActual);
 
             // Imprimir Factura Final
             String facturaFinal = "--- FACTURA (" + metodo + ") ---\n" +
-                    "Subtotal: ₡" + pedidoActual.calcularSubtotal() + "\n" +
-                    "IVA (13%): ₡" + pedidoActual.calcularImpuesto() + "\n" +
-                    "Total a Pagar: ₡" + total + mensajeVuelto +
+                    "Subtotal: ₡" + ventaService.calcularSubtotal(pedidoActual) + "\n" +
+                    "IVA (13%): ₡" + ventaService.calcularImpuesto(pedidoActual) + "\n" +
+                    "Total a Pagar: ₡" + ventaService.calcularTotal(pedidoActual) + mensajeVuelto +
                     "\n\n¡Gracias por su compra!";
 
             JOptionPane.showMessageDialog(this, facturaFinal, "Factura", JOptionPane.INFORMATION_MESSAGE);
@@ -144,13 +158,52 @@ public class PanelVentas extends JPanel {
         add(panelTop, BorderLayout.NORTH);
         add(panelCentro, BorderLayout.CENTER);
         add(panelSur, BorderLayout.SOUTH);
-        actualizarComboProductos();
+        actualizarComboProductosEnHilo();
     }
 
     public void actualizarComboProductos() {
         comboProductos.removeAllItems();
-        for (Producto p : inventario.obtenerTodos()) {
-            comboProductos.addItem(p);
+        List<Producto> productos = ventaService.getRepositorioProductos().obtenerTodos();
+        if (productos == null) return;
+        for (Producto p : productos) {
+            if (p != null) comboProductos.addItem(p);
         }
+    }
+
+    /**
+     * Obtiene los productos en un hilo secundario para
+     * evitar bloquear la interfaz gráfica.
+     */
+    public void actualizarComboProductosEnHilo() {
+        SwingWorker<List<Producto>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<Producto> doInBackground() throws Exception {
+                return ventaService.getRepositorioProductos().obtenerTodos();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Producto> productos = get();
+                    comboProductos.removeAllItems();
+                    if (productos == null) {
+                        return;
+                    }
+                    // Mostrar únicamente productos con stock
+                    for (Producto p : productos) {
+                        if (p != null && p.getCantidadInventario() > 0) {
+                            comboProductos.addItem(p);
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(
+                            PanelVentas.this,
+                            "Error al cargar los productos: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
     }
 }

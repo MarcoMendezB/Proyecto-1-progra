@@ -26,5 +26,27 @@ bin/
 ### VS Code ###
 .vscode/
 
+### Java / Maven compilation output ###
+out/
+target/
+bin/
+*.class
+*.jar
+*.war
+*.ear
+
+### MySQL connector (librería externa) ###
+lib/*.jar
+
 ### Mac OS ###
 .DS_Store
+
+### Java / Maven compilation output ###
+out/
+target/
+bin/
+*.class
+*.jar
+*.war
+*.ear
+!.gitignore

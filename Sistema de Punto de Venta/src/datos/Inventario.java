@@ -36,7 +36,9 @@ public class Inventario implements Repositorio<Producto> {
     }
 
     public void guardarDatos() {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_CSV))) {
+        File archivoTmp = new File(ARCHIVO_CSV + ".tmp");
+        File archivo = new File(ARCHIVO_CSV);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivoTmp))) {
             pw.println("Codigo,Nombre,Categoria,Precio,Stock"); // Encabezado de columnas
             for (Producto p : productos) {
                 pw.println(p.getCodigo() + "," + p.getNombre() + "," +
@@ -45,6 +47,10 @@ public class Inventario implements Repositorio<Producto> {
             }
         } catch (Exception e) {
             System.out.println("Error al guardar CSV: " + e.getMessage());
+            return;
+        }
+        if (!archivoTmp.renameTo(archivo)) {
+            System.out.println("Error al renombrar archivo temporal de CSV.");
         }
     }
     // ------------------------------
@@ -57,8 +63,11 @@ public class Inventario implements Repositorio<Producto> {
 
     @Override
     public void actualizar(Producto p) {
+        if (p == null) return;
+        String codigo = p.getCodigo();
         for (int i = 0; i < productos.size(); i++) {
-            if (productos.get(i).getCodigo().equals(p.getCodigo())) {
+            Producto actual = productos.get(i);
+            if (actual != null && java.util.Objects.equals(actual.getCodigo(), codigo)) {
                 productos.set(i, p);
                 guardarDatos(); // Guardar al modificar
                 break;
@@ -68,10 +77,32 @@ public class Inventario implements Repositorio<Producto> {
 
     @Override
     public void eliminar(String codigo) {
-        productos.removeIf(p -> p.getCodigo().equals(codigo));
+        if (productos == null) return;
+        productos.removeIf(p -> p != null && java.util.Objects.equals(p.getCodigo(), codigo));
         guardarDatos(); // Guardar al borrar
     }
 
     @Override
-    public List<Producto> obtenerTodos() { return productos; }
+    public void decrementarStock(String codigo) {
+        if (productos == null) return;
+        for (Producto p : productos) {
+            if (p != null && java.util.Objects.equals(p.getCodigo(), codigo)) {
+                int stockActual = p.getCantidadInventario();
+                if (stockActual > 0) {
+                    p.setCantidadInventario(stockActual - 1);
+                }
+                break;
+            }
+        }
+        guardarDatos();
+    }
+
+    public List<Producto> obtenerTodos() {
+        List<Producto> copia = new ArrayList<>();
+        if (productos == null) return copia;
+        for (Producto p : productos) {
+            if (p != null) copia.add(p);
+        }
+        return copia;
+    }
 }
